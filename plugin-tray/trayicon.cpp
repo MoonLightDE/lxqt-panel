@@ -207,7 +207,7 @@ TrayIcon::~TrayIcon()
     XErrorHandler old = XSetErrorHandler(windowErrorHandler);
 
     XUnmapWindow(dsp, mIconId);
-    XReparentWindow(dsp, mIconId, QX11Info::appRootWindow(), 0, 0);
+    XReparentWindow(dsp, mIconId,  reinterpret_cast<Window> (QX11Info::appRootWindow()), 0, 0);
 
     XDestroyWindow(dsp, mWindowId);
     XSync(dsp, False);

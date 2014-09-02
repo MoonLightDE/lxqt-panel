@@ -306,7 +306,7 @@ VisualID LxQtTray::getVisual()
 void LxQtTray::startTray()
 {
     Display* dsp = mDisplay;
-    Window root = QX11Info::appRootWindow();
+    Window root = reinterpret_cast<Window> (QX11Info::appRootWindow());
 
     QString s = QString("_NET_SYSTEM_TRAY_S%1").arg(DefaultScreen(dsp));
     Atom _NET_SYSTEM_TRAY_S = xfitMan().atom(s.toLatin1());
