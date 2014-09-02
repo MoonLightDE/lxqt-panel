@@ -4,7 +4,6 @@ set(PROJECT lxqt-panel )
 
 set(lxqt-panel_PRIV_H_FILES
     lxqtpanel.h
-    lxqtpanelapplication.h
     lxqtpanellayout.h
     lxqtpanelpluginconfigdialog.h
     config/configpaneldialog.h
@@ -23,9 +22,8 @@ set(lxqt-panel_PUB_H_FILES
 )
 
 set(lxqt-panel_CPP_FILES
-    main.cpp
+    
     lxqtpanel.cpp
-    lxqtpanelapplication.cpp
     lxqtpanellayout.cpp
     lxqtpanelpluginconfigdialog.cpp
     config/configpaneldialog.cpp
@@ -36,13 +34,37 @@ set(lxqt-panel_CPP_FILES
 
 set(MOCS
     lxqtpanel.h
-    lxqtpanelapplication.h
     lxqtpanellayout.h
     lxqtpanelpluginconfigdialog.h
     config/configpaneldialog.h
     plugin.h
     pluginmoveprocessor.h
 )
+
+if(MOONLIGHT_MOD)
+    set(lxqt-panel_CPP_FILES
+        ${lxqt-panel_CPP_FILES}
+        Activator.cpp
+        moonlightpanelmodule.cpp
+    )
+
+    set(MOCS 
+        ${MOCS}
+        moonlightpanelmodule.h
+    )
+
+else()
+    set(lxqt-panel_CPP_FILES
+        ${lxqt-panel_CPP_FILES}
+        main.cpp
+        lxqtpanelapplication.cpp
+    )
+
+    set(MOCS 
+        ${MOCS}
+        lxqtpanelapplication.h
+    )
+endif()
 
 set(LIBRARIES
     ${LXQT_LIBRARIES}
@@ -127,9 +149,53 @@ set (PLUGIN_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/lxqt-panel/)
 add_definitions(-DPLUGIN_DIR=\"${PLUGIN_DIR}\")
 message(STATUS "Panel plugins location: ${PLUGIN_DIR}")
 
-add_executable(${PROJECT} ${lxqt-panel_PUB_H_FILES} ${lxqt-panel_PRIV_H_FILES} ${lxqt-panel_CPP_FILES} ${MOC_SOURCES} ${lxqt-runner_QM_FILES} ${QRC_SOURCES} ${UI_HEADERS})
-target_link_libraries(${PROJECT} ${LIBRARIES} ${QTX_LIBRARIES})
+if(MOONLIGHT_MOD)
+    add_definitions(-DMOONLIGHT_MOD=Yes)
 
-install(TARGETS ${PROJECT} RUNTIME DESTINATION bin)
+    set(MODULE_NAME moonlightDE-lxqt_panel)
+    find_package(MOONLIGHT_CORE REQUIRED)
+    include_directories(${MOONLIGHT_CORE_SERIVICES_DIR})
+
+    usFunctionGenerateModuleInit( lxqt-panel_CPP_FILES
+        NAME  ${MODULE_NAME}
+        LIBRARY_NAME lxqt_panel
+    )
+
+    add_library(${MODULE_NAME} SHARED
+        ${lxqt-panel_PUB_H_FILES}
+        ${lxqt-panel_PRIV_H_FILES}
+        ${lxqt-panel_CPP_FILES}
+        ${MOC_SOURCES}
+        ${lxqt-runner_QM_FILES}
+        ${QRC_SOURCES}
+        ${UI_HEADERS}
+    )
+
+    target_link_libraries(${MODULE_NAME}
+        ${LIBRARIES} 
+        ${QTX_LIBRARIES}
+        # Link the CppMicroServices library
+        ${CppMicroServices_LIBRARIES}
+    )
+
+    ## --------------------------------------------------------------
+    ## Install
+    ## --------------------------------------------------------------
+    configure_file(descriptor.in  ${MODULE_NAME}.desktop )
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/panel/${MODULE_NAME}.desktop 
+        DESTINATION ${MOONLIGHT_CORE_DESCRIPTORS_DIR})
+
+    INSTALL(TARGETS ${MODULE_NAME}
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION ${MOONLIGHT_CORE_MODULES_DIR}
+        ARCHIVE DESTINATION lib/static)
+else()
+    add_executable(${PROJECT} ${lxqt-panel_PUB_H_FILES} ${lxqt-panel_PRIV_H_FILES} ${lxqt-panel_CPP_FILES} ${MOC_SOURCES} ${lxqt-runner_QM_FILES} ${QRC_SOURCES} ${UI_HEADERS})
+    target_link_libraries(${PROJECT} ${LIBRARIES} ${QTX_LIBRARIES})
+
+    install(TARGETS ${PROJECT} RUNTIME DESTINATION bin)
+
+endif()
+
 install(FILES   ${CONFIG_FILES}    DESTINATION ${LXQT_ETC_XDG_DIR}/lxqt)
 install(FILES  ${lxqt-panel_PUB_H_FILES} DESTINATION include/lxqt)

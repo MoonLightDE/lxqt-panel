@@ -61,6 +61,16 @@ include(LxQtLibSuffix)
 
 add_definitions ( -Wall )
 
+# Build as a MoonLightDE Module
+option(MOONLIGHT_MOD "Build as a module for the MoonLight DE." $ENV{MOONLIGHT_MOD})
+if(MOONLIGHT_MOD)
+    find_package(CppMicroServices NO_MODULE REQUIRED)
+    include_directories(${CppMicroServices_INCLUDE_DIRS})
+
+    find_package(MOONLIGHT_CORE REQUIRED)
+    include_directories(${MOONLIGHT_CORE_SERIVICES_DIR})
+endif()
+
 # Support Qt5
 option(USE_QT5 "Build with Qt5." $ENV{USE_QT5})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
